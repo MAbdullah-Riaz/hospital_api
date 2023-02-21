@@ -1,7 +1,7 @@
 import { response } from 'express';
-import HospitalModel, { Patient } from '../models/PatientZX';
+import HospitalModel, { Patient } from '../models/Patient';
 import asyncHandler from 'express-async-handler';
-import { IRequest, IResponse, IRequestParams } from '../dto/CommonZX.dto';
+import { IRequest, IResponse, IRequestParams } from '../dto/Common.dto';
 
 const addNewPatient = asyncHandler(
   async (request: IRequest<never, Patient>, response: IResponse<Patient>) => {

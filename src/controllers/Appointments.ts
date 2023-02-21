@@ -1,9 +1,9 @@
 import express, { response } from 'express';
-import { IRequest, IResponse, IRequestParams } from '../dto/CommonZX.dto';
-import AppointmentModel, { Appointment } from '../models/AppointmentsZX';
+import { IRequest, IResponse, IRequestParams } from '../dto/Common.dto';
+import AppointmentModel, { Appointment } from '../models/Appointments';
 import asyncHandler from 'express-async-handler';
 
-import { Currency } from '../constants/EnumZX';
+import { Currency } from '../constants/Enum';
 import { symbol } from 'joi';
 const app = express();
 const router = express.Router();
