@@ -20,4 +20,4 @@ const connectDb = () => __awaiter(void 0, void 0, void 0, function* () {
     console.log('Db Connected');
 });
 exports.connectDb = connectDb;
-//# sourceMappingURL=hospitalDB.js.map
+//# sourceMappingURL=HospitalDB.js.map

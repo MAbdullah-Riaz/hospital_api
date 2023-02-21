@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { Currency, PetType } from '../constants/EnumZX';
+import { Currency, PetType } from '../constants/Enum';
 
 export interface Patient {
   ownerName: string;

@@ -13,76 +13,24 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const hospital_1 = __importDefault(require("./models/hospital"));
-const appointments_1 = __importDefault(require("./models/appointments"));
-const hospitalDB_1 = require("./config/hospitalDB");
+const HospitalDB_1 = require("./config/HospitalDB");
+const Patients_1 = __importDefault(require("./routes/Patients"));
+const Appointments_1 = __importDefault(require("./routes/Appointments"));
+const ErrorMiddleware_1 = require("./middleware/ErrorMiddleware");
 const app = (0, express_1.default)();
 const port = 3000;
-app.get('/patients', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const patients = yield hospital_1.default.find();
-    res.send(patients);
-}));
-app.post('/add-appointment', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const addedAppointment = new appointments_1.default({
-        startTime: '2022-02-26T17:08:13.930Z',
-        endTime: '2022-03-26T17:08:13.930Z',
-        description: 'this is Description',
-        isPaid: true,
-        currency: 'EUR',
-        amount: 234,
-    });
-    res.send(yield addedAppointment.save());
-}));
-const addNewPatient = () => __awaiter(void 0, void 0, void 0, function* () {
-    const patientInfo = new hospital_1.default({
-        ownerName: 'Josh Mosh',
-        petName: 'Tony',
-        ownerAddress: 'New Jersy, United States ',
-        ownerPhoneNo: 655231651,
-        petType: 'dog',
-    });
-    try {
-        const savedPatientInfo = yield patientInfo.save();
-        console.log(savedPatientInfo);
-    }
-    catch (error) {
-        console.log(error.message);
-    }
-});
-// addNewPatient();
-const updatePatient = (id) => __awaiter(void 0, void 0, void 0, function* () {
-    const patients = yield hospital_1.default.update({ _id: id }, {
-        $set: {
-            ownerName: 'Mosh',
-        },
-    });
-    console.log(patients);
-});
-// updatePatient('63ef601e204d76ccd099f5ec');
-const deletePatient = (id) => __awaiter(void 0, void 0, void 0, function* () {
-    const patients = yield hospital_1.default.findByIdAndRemove(id);
-    console.log('Deleted : ', patients);
-});
-// deletePatient('63ef601e204d76ccd099f5ec');
-const addAppointments = (id) => __awaiter(void 0, void 0, void 0, function* () {
-    const patients = yield hospital_1.default.update({ _id: id }, {
-        $set: {
-            appointmentStartTime: '20:15:10',
-        },
-    });
-    console.log(patients);
-});
-// addAppointments('63ef601e204d76ccd099f5ec');
-// app.listen(port, () => {
-//   return console.log(`Express is listening at http://localhost:${port}`);
-// });
+app.use(express_1.default.json());
+app.use('/patients', Patients_1.default);
+app.use('/appointments', Appointments_1.default);
+app.use(ErrorMiddleware_1.notFound);
+app.use(ErrorMiddleware_1.errorHandler);
 app.listen(port, () => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        yield (0, hospitalDB_1.connectDb)();
+        yield (0, HospitalDB_1.connectDb)();
         console.log(`Express is listening at http://localhost:${port}`);
     }
     catch (error) {
         console.error('Error Connecting Database', error);
     }
 }));
-//# sourceMappingURL=app.js.map
+//# sourceMappingURL=App.js.map

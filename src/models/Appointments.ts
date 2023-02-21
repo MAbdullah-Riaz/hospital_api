@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { Currency } from '../constants/EnumZX';
+import { Currency } from '../constants/Enum';
 
 export interface Appointment {
   _id: string;
@@ -11,6 +11,7 @@ export interface Appointment {
   currency: Currency;
   amount: number;
 }
+
 const appointmentSchema = new mongoose.Schema({
   startTime: { type: Date, required: true },
   endTime: { type: Date, required: true },
@@ -28,9 +29,7 @@ const appointmentSchema = new mongoose.Schema({
   },
   amount: {
     type: Number,
-    required: function () {
-      return this.isPaid;
-    },
+    required: true
   },
 });
 
