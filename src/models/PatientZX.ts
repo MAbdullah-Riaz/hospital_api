@@ -1,11 +1,11 @@
 import mongoose from 'mongoose';
-import { Currency, PetType } from '../constants/enum';
+import { Currency, PetType } from '../constants/EnumZX';
 
 export interface Patient {
   ownerName: string;
   petName: Date;
   ownerAddress: Date;
-  ownerPhoneNo: string;
+  ownerPhoneNo: Number;
   petType: PetType;
 }
 

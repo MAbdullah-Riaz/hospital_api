@@ -1,9 +1,8 @@
 import express, { Request, Response } from 'express';
-import hospitalModel from './models/hospital';
-import { connectDb } from './config/hospitalDB';
-import patientRoutes from './routes/patients';
-import appointmentsRoutes from './routes/appointments';
-import { errorHandler, notFound } from './middleware/errorMiddleware';
+import { connectDb } from './config/HospitalDBZX';
+import patientRoutes from './routes/PatientsZX';
+import appointmentsRoutes from './routes/AppointmentsZX';
+import { errorHandler, notFound } from './middleware/ErrorMiddlewareZX';
 
 const app = express();
 const port = 3000;

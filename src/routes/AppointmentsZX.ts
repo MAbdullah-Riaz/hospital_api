@@ -5,7 +5,7 @@ import {
   updateAppointment,
   deleteAppointment,
   getUnpaidAppointments,
-} from '../controllers/appointments';
+} from '../controllers/AppointmentsZX';
 
 const router = express.Router();
 

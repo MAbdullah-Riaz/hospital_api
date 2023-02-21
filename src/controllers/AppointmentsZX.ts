@@ -1,9 +1,9 @@
 import express, { response } from 'express';
-import { IRequest, IResponse } from '../constants/types';
-import AppointmentModel, { Appointment } from '../models/appointments';
+import { IRequest, IResponse, IRequestParams } from '../dto/CommonZX.dto';
+import AppointmentModel, { Appointment } from '../models/AppointmentsZX';
 import asyncHandler from 'express-async-handler';
 
-import { Currency } from '../constants/enum';
+import { Currency } from '../constants/EnumZX';
 import { symbol } from 'joi';
 const app = express();
 const router = express.Router();
@@ -30,12 +30,9 @@ const addNewAppointment = asyncHandler(
   }
 );
 
-interface RequestParams {
-  id: string;
-}
 const getAllAppointments = asyncHandler(
   async (
-    request: IRequest<RequestParams, never>,
+    request: IRequest<IRequestParams, never>,
     response: IResponse<Appointment[]>
   ) => {
     const appointments = await AppointmentModel.find({
@@ -45,40 +42,42 @@ const getAllAppointments = asyncHandler(
   }
 );
 
-interface UpdateAppointmentBody {
-  currency: Currency;
-  isPaid: Boolean;
-}
 const updateAppointment = asyncHandler(
   async (
-    request: IRequest<RequestParams, UpdateAppointmentBody>,
-    response: IResponse<Appointment[]>
+    request: IRequest<IRequestParams, Appointment>,
+    response: IResponse<Omit<Appointment, '_id'>>
   ) => {
     const patients = await AppointmentModel.updateOne(
       { _id: request.params.id },
       {
+        startTime: request.body.startTime,
+        endTime: request.body.endTime,
+        description: request.body.description,
         currency: request.body.currency,
         isPaid: request.body.isPaid,
+        amount: request.body.amount,
       }
     );
     response.send(JSON.parse(JSON.stringify(patients)));
   }
 );
 const getUnpaidAppointments = asyncHandler(
-  async (request: IRequest<any>, response: IResponse<Appointment[]>) => {
+  async (
+    request: IRequest<never, never>,
+    response: IResponse<Appointment[]>
+  ) => {
     response.send(await AppointmentModel.find({ isPaid: false }));
   }
 );
 
 const deleteAppointment = asyncHandler(
   async (
-    request: IRequest<RequestParams>,
+    request: IRequest<IRequestParams, never>,
     response: IResponse<Appointment[]>
   ) => {
     const appointment = await AppointmentModel.findByIdAndRemove(
       request.params.id
     );
-    
     response.send(JSON.parse(JSON.stringify(appointment)));
   }
 );
