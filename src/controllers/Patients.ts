@@ -1,7 +1,9 @@
-import { response } from 'express';
 import HospitalModel, { Patient } from '../models/Patient';
+import AppointmentModel from '../models/Appointments';
 import asyncHandler from 'express-async-handler';
 import { IRequest, IResponse, IRequestParams } from '../dto/Common.dto';
+
+import { exchangeRates } from '../utils/helpers';
 
 const addNewPatient = asyncHandler(
   async (request: IRequest<never, Patient>, response: IResponse<Patient>) => {
@@ -54,4 +56,41 @@ const getAllPatient = asyncHandler(
   }
 );
 
-export { addNewPatient, updatePatient, deletePatient, getAllPatient };
+const popularPet = asyncHandler(
+  async (request: IRequest<IRequestParams>, response) => {
+    const mostPopularPet = await HospitalModel.aggregate([
+      { $group: { _id: '$petType', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+    ]);
+    const pricePet = moneyForEachPet();
+    console.log(pricePet);
+  }
+);
+const moneyForEachPet = async () => {
+  const appointmentModel = await AppointmentModel.find().select({
+    _id: 1,
+    patientId: 1,
+    amount: 1,
+  });
+  const hospitalModel = await HospitalModel.find().select({
+    _id: 1,
+    petType: 1,
+  });
+  const priceObj = { cat: 0, dog: 0, bird: 0 };
+  hospitalModel.forEach((pElement) => {
+    appointmentModel.forEach((aElement) => {
+      if (pElement._id.equals(aElement.patientId)) {
+        priceObj[pElement.petType] += aElement.amount;
+      }
+    });
+  });
+  return priceObj;
+};
+
+export {
+  addNewPatient,
+  updatePatient,
+  deletePatient,
+  getAllPatient,
+  popularPet,
+};

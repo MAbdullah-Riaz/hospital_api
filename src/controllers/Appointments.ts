@@ -3,8 +3,8 @@ import { IRequest, IResponse, IRequestParams } from '../dto/Common.dto';
 import AppointmentModel, { Appointment } from '../models/Appointments';
 import asyncHandler from 'express-async-handler';
 
-import { Currency } from '../constants/Enum';
-import { symbol } from 'joi';
+import mongoose from 'mongoose';
+import { exchangeRates } from '../utils/helpers';
 const app = express();
 const router = express.Router();
 
@@ -82,10 +82,110 @@ const deleteAppointment = asyncHandler(
   }
 );
 
+const remainingBalance = asyncHandler(
+  async (
+    request: IRequest<IRequestParams, never>,
+    response: IResponse<any>
+  ) => {
+    const remainBalance = await AppointmentModel.aggregate([
+      { $match: { patientId: new mongoose.Types.ObjectId(request.params.id) } },
+      { $group: { _id: '$isPaid', totalAmount: { $sum: '$amount' } } },
+    ]);
+    console.log(remainBalance);
+    // // console.log(JSON.stringify(amountPaid));
+    // response.sendStatus(JSON.parse(JSON.stringify(remainBalance)));
+  }
+);
+
+const appointmentOfADay = asyncHandler(
+  async (request: IRequest<IRequestParams>, response) => {
+    const date = new Date(request.params.id);
+    const startOfDay = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate()
+    );
+    const endOfDay = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate() + 1
+    );
+
+    const oneDayAppointment = await AppointmentModel.find({
+      startTime: {
+        $gte: startOfDay,
+        $lt: endOfDay,
+      },
+    });
+    console.log(oneDayAppointment);
+  }
+);
+
+const appointmentStatus = asyncHandler(
+  async (request: IRequest<IRequestParams>, response) => {
+    const date = new Date(request.params.id);
+    const daysInWeek = date.getDay();
+    const daysInMonth = date.getDate();
+    const startOfWeek = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate() - daysInWeek
+    );
+    const endOfWeek = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate() + 1
+    );
+    const startOfMonth = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate() - daysInMonth
+    );
+    const endOfMonth = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate() + 1
+    );
+    const oneWeekAppointments = await AppointmentModel.find({
+      startTime: {
+        $gte: startOfWeek,
+        $lt: endOfWeek,
+      },
+    });
+    // exchangeRates();
+    const oneMonthAppointments = await AppointmentModel.find({
+      startTime: {
+        $gte: startOfMonth,
+        $lt: endOfMonth,
+      },
+    });
+    //conversion of json array into output format
+    const responseObj = { amountPaid: 0, amountUnpaid: 0, balance: 0 };
+    for (const element of oneWeekAppointments) {
+      const USDAmount = await exchangeRates(
+        element.currency,
+        'USD',
+        element.amount
+      );
+      if (element.isPaid) {
+        responseObj.amountPaid += USDAmount;
+      } else {
+        responseObj.amountUnpaid += USDAmount;
+      }
+      responseObj.balance += USDAmount;
+    }
+
+    console.log(responseObj);
+  }
+);
+
 export {
   addNewAppointment,
   getAllAppointments,
   updateAppointment,
   deleteAppointment,
   getUnpaidAppointments,
+  remainingBalance,
+  appointmentOfADay,
+  appointmentStatus,
 };

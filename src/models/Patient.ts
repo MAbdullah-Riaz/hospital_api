@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { Currency, PetType } from '../constants/Enum';
+import { PetType } from '../constants/Enum';
 
 export interface Patient {
   ownerName: string;
@@ -14,7 +14,7 @@ const hospitalSchema = new mongoose.Schema({
   petName: { type: String, required: true },
   ownerAddress: { type: String, required: true },
   ownerPhoneNo: { type: Number, required: true },
-  petType: { enum: Object.values(PetType) },
+  petType: {type:String, enum: Object.values(PetType), required: true },
 });
 
 export default mongoose.model('patientCollection', hospitalSchema);
