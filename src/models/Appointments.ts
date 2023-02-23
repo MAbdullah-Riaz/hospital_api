@@ -1,11 +1,11 @@
 import mongoose from 'mongoose';
 import { Currency } from '../constants/Enum';
 
-export interface Appointment {
+export interface IAppointment {
   _id: string;
   startTime: Date;
   endTime: Date;
-  patientId?: string;
+  patientId?: string | mongoose.Types.ObjectId;
   description: string;
   isPaid: boolean;
   currency: Currency;

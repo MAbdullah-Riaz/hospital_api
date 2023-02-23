@@ -3,8 +3,8 @@ import { PetType } from '../constants/Enum';
 
 export interface Patient {
   ownerName: string;
-  petName: Date;
-  ownerAddress: Date;
+  petName: string;
+  ownerAddress: string;
   ownerPhoneNo: Number;
   petType: PetType;
 }
@@ -14,7 +14,7 @@ const hospitalSchema = new mongoose.Schema({
   petName: { type: String, required: true },
   ownerAddress: { type: String, required: true },
   ownerPhoneNo: { type: Number, required: true },
-  petType: {type:String, enum: Object.values(PetType), required: true },
+  petType: { type: String, enum: Object.values(PetType), required: true },
 });
 
 export default mongoose.model('patientCollection', hospitalSchema);

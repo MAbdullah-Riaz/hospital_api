@@ -1,53 +1,50 @@
-import express, { response } from 'express';
 import { IRequest, IResponse, IRequestParams } from '../dto/Common.dto';
-import AppointmentModel, { Appointment } from '../models/Appointments';
+import AppointmentModel, { IAppointment } from '../models/Appointments';
 import asyncHandler from 'express-async-handler';
 
 import mongoose from 'mongoose';
 import { exchangeRates } from '../utils/helpers';
-const app = express();
-const router = express.Router();
-
+import { IRemainingBalance, IStatement } from '../dto/Appointments.dto';
 const addNewAppointment = asyncHandler(
   async (
-    req: IRequest<never, Omit<Appointment, '_id'>>,
-    res: IResponse<Appointment>
+    request: IRequest<never, Omit<IAppointment, '_id'>>,
+    response: IResponse<Omit<IAppointment, '_id'>>
   ) => {
-    const { body } = req;
+    const { body } = request;
     const appointmentDoc = new AppointmentModel(body);
-    const resultObj = await appointmentDoc.save();
-    const appointment: Appointment = {
-      _id: resultObj._id.toString(),
-      patientId: resultObj.patientId.toString(),
-      description: resultObj.description,
-      startTime: resultObj.startTime,
-      endTime: resultObj.endTime,
-      currency: resultObj.currency,
-      isPaid: resultObj.isPaid,
-      amount: resultObj.amount,
+    const addedAppointment = await appointmentDoc.save();
+    const appointment: IAppointment = {
+      _id: addedAppointment._id.toString(),
+      patientId: addedAppointment.patientId.toString(),
+      description: addedAppointment.description,
+      startTime: addedAppointment.startTime,
+      endTime: addedAppointment.endTime,
+      currency: addedAppointment.currency,
+      isPaid: addedAppointment.isPaid,
+      amount: addedAppointment.amount,
     };
-    res.send(appointment);
+    response.send(addedAppointment);
   }
 );
 
 const getAllAppointments = asyncHandler(
   async (
     request: IRequest<IRequestParams, never>,
-    response: IResponse<Appointment[]>
+    response: IResponse<Omit<IAppointment, '_id'>[]>
   ) => {
     const appointments = await AppointmentModel.find({
       patientId: request.params.id,
     });
-    response.send(JSON.parse(JSON.stringify(appointments)));
+    response.send(appointments);
   }
 );
 
 const updateAppointment = asyncHandler(
   async (
-    request: IRequest<IRequestParams, Appointment>,
-    response: IResponse<Omit<Appointment, '_id'>>
+    request: IRequest<IRequestParams, IAppointment>,
+    response: IResponse<Omit<IAppointment, '_id'>>
   ) => {
-    const patients = await AppointmentModel.updateOne(
+    await AppointmentModel.updateOne(
       { _id: request.params.id },
       {
         startTime: request.body.startTime,
@@ -58,13 +55,13 @@ const updateAppointment = asyncHandler(
         amount: request.body.amount,
       }
     );
-    response.send(JSON.parse(JSON.stringify(patients)));
+    response.send(request.body);
   }
 );
 const getUnpaidAppointments = asyncHandler(
   async (
     request: IRequest<never, never>,
-    response: IResponse<Appointment[]>
+    response: IResponse<IAppointment[]>
   ) => {
     response.send(await AppointmentModel.find({ isPaid: false }));
   }
@@ -73,32 +70,33 @@ const getUnpaidAppointments = asyncHandler(
 const deleteAppointment = asyncHandler(
   async (
     request: IRequest<IRequestParams, never>,
-    response: IResponse<Appointment[]>
+    response: IResponse<Omit<IAppointment, '_id'>>
   ) => {
     const appointment = await AppointmentModel.findByIdAndRemove(
       request.params.id
     );
-    response.send(JSON.parse(JSON.stringify(appointment)));
+    response.send(appointment);
   }
 );
 
 const remainingBalance = asyncHandler(
   async (
     request: IRequest<IRequestParams, never>,
-    response: IResponse<any>
+    response: IResponse<IRemainingBalance>
   ) => {
     const remainBalance = await AppointmentModel.aggregate([
       { $match: { patientId: new mongoose.Types.ObjectId(request.params.id) } },
       { $group: { _id: '$isPaid', totalAmount: { $sum: '$amount' } } },
     ]);
-    console.log(remainBalance);
-    // // console.log(JSON.stringify(amountPaid));
-    // response.sendStatus(JSON.parse(JSON.stringify(remainBalance)));
+    response.send({ remainingBalance: Number(remainBalance[1].totalAmount) });
   }
 );
 
 const appointmentOfADay = asyncHandler(
-  async (request: IRequest<IRequestParams>, response) => {
+  async (
+    request: IRequest<IRequestParams>,
+    response: IResponse<Omit<IAppointment, '_id'>[]>
+  ) => {
     const date = new Date(request.params.id);
     const startOfDay = new Date(
       date.getFullYear(),
@@ -111,18 +109,21 @@ const appointmentOfADay = asyncHandler(
       date.getDate() + 1
     );
 
-    const oneDayAppointment = await AppointmentModel.find({
+    const oneDayAppointments = await AppointmentModel.find({
       startTime: {
         $gte: startOfDay,
         $lt: endOfDay,
       },
     });
-    console.log(oneDayAppointment);
+    response.send(oneDayAppointments);
   }
 );
 
 const appointmentStatus = asyncHandler(
-  async (request: IRequest<IRequestParams>, response) => {
+  async (
+    request: IRequest<IRequestParams>,
+    response: IResponse<IStatement>
+  ) => {
     const date = new Date(request.params.id);
     const daysInWeek = date.getDay();
     const daysInMonth = date.getDate();
@@ -152,15 +153,14 @@ const appointmentStatus = asyncHandler(
         $lt: endOfWeek,
       },
     });
-    // exchangeRates();
     const oneMonthAppointments = await AppointmentModel.find({
       startTime: {
         $gte: startOfMonth,
         $lt: endOfMonth,
       },
     });
-    //conversion of json array into output format
-    const responseObj = { amountPaid: 0, amountUnpaid: 0, balance: 0 };
+
+    const weeklyStatus = { amountPaid: 0, amountUnpaid: 0, balance: 0 };
     for (const element of oneWeekAppointments) {
       const USDAmount = await exchangeRates(
         element.currency,
@@ -168,14 +168,31 @@ const appointmentStatus = asyncHandler(
         element.amount
       );
       if (element.isPaid) {
-        responseObj.amountPaid += USDAmount;
+        weeklyStatus.amountPaid += USDAmount;
       } else {
-        responseObj.amountUnpaid += USDAmount;
+        weeklyStatus.amountUnpaid += USDAmount;
       }
-      responseObj.balance += USDAmount;
+      weeklyStatus.balance += USDAmount;
     }
 
-    console.log(responseObj);
+    const monthlyStatus = { amountPaid: 0, amountUnpaid: 0, balance: 0 };
+    for (const element of oneMonthAppointments) {
+      const USDAmount = await exchangeRates(
+        element.currency,
+        'USD',
+        element.amount
+      );
+      if (element.isPaid) {
+        monthlyStatus.amountPaid += USDAmount;
+      } else {
+        monthlyStatus.amountUnpaid += USDAmount;
+      }
+      monthlyStatus.balance += USDAmount;
+    }
+    response.send({
+      weeklyStatus: weeklyStatus,
+      monthlyStatus: monthlyStatus,
+    });
   }
 );
 
