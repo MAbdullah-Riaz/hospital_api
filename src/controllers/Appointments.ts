@@ -13,16 +13,7 @@ const addNewAppointment = asyncHandler(
     const { body } = request;
     const appointmentDoc = new AppointmentModel(body);
     const addedAppointment = await appointmentDoc.save();
-    const appointment: IAppointment = {
-      _id: addedAppointment._id.toString(),
-      patientId: addedAppointment.patientId.toString(),
-      description: addedAppointment.description,
-      startTime: addedAppointment.startTime,
-      endTime: addedAppointment.endTime,
-      currency: addedAppointment.currency,
-      isPaid: addedAppointment.isPaid,
-      amount: addedAppointment.amount,
-    };
+
     response.send(addedAppointment);
   }
 );
